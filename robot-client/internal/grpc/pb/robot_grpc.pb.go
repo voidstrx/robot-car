@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.2
 // - protoc             v7.35.1
-// source: proto/robot.proto
+// source: internal/grpc/proto/robot.proto
 
 package pb
 
@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RobotControl_StreamControl_FullMethodName = "/robot.v1.RobotControl/StreamControl"
+	RobotControl_StreamControl_FullMethodName   = "/robot.v1.RobotControl/StreamControl"
+	RobotControl_WebRTCSignaling_FullMethodName = "/robot.v1.RobotControl/WebRTCSignaling"
 )
 
 // RobotControlClient is the client API for RobotControl service.
@@ -27,6 +28,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RobotControlClient interface {
 	StreamControl(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[Command, Telemetry], error)
+	// Отдельный стрим для WebRTC signaling (SDP + ICE)
+	WebRTCSignaling(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[WebRTCSignal, WebRTCSignal], error)
 }
 
 type robotControlClient struct {
@@ -50,11 +53,26 @@ func (c *robotControlClient) StreamControl(ctx context.Context, opts ...grpc.Cal
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type RobotControl_StreamControlClient = grpc.BidiStreamingClient[Command, Telemetry]
 
+func (c *robotControlClient) WebRTCSignaling(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[WebRTCSignal, WebRTCSignal], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &RobotControl_ServiceDesc.Streams[1], RobotControl_WebRTCSignaling_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[WebRTCSignal, WebRTCSignal]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type RobotControl_WebRTCSignalingClient = grpc.BidiStreamingClient[WebRTCSignal, WebRTCSignal]
+
 // RobotControlServer is the server API for RobotControl service.
 // All implementations must embed UnimplementedRobotControlServer
 // for forward compatibility.
 type RobotControlServer interface {
 	StreamControl(grpc.BidiStreamingServer[Command, Telemetry]) error
+	// Отдельный стрим для WebRTC signaling (SDP + ICE)
+	WebRTCSignaling(grpc.BidiStreamingServer[WebRTCSignal, WebRTCSignal]) error
 	mustEmbedUnimplementedRobotControlServer()
 }
 
@@ -67,6 +85,9 @@ type UnimplementedRobotControlServer struct{}
 
 func (UnimplementedRobotControlServer) StreamControl(grpc.BidiStreamingServer[Command, Telemetry]) error {
 	return status.Error(codes.Unimplemented, "method StreamControl not implemented")
+}
+func (UnimplementedRobotControlServer) WebRTCSignaling(grpc.BidiStreamingServer[WebRTCSignal, WebRTCSignal]) error {
+	return status.Error(codes.Unimplemented, "method WebRTCSignaling not implemented")
 }
 func (UnimplementedRobotControlServer) mustEmbedUnimplementedRobotControlServer() {}
 func (UnimplementedRobotControlServer) testEmbeddedByValue()                      {}
@@ -96,6 +117,13 @@ func _RobotControl_StreamControl_Handler(srv interface{}, stream grpc.ServerStre
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type RobotControl_StreamControlServer = grpc.BidiStreamingServer[Command, Telemetry]
 
+func _RobotControl_WebRTCSignaling_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RobotControlServer).WebRTCSignaling(&grpc.GenericServerStream[WebRTCSignal, WebRTCSignal]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type RobotControl_WebRTCSignalingServer = grpc.BidiStreamingServer[WebRTCSignal, WebRTCSignal]
+
 // RobotControl_ServiceDesc is the grpc.ServiceDesc for RobotControl service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -110,6 +138,12 @@ var RobotControl_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 			ClientStreams: true,
 		},
+		{
+			StreamName:    "WebRTCSignaling",
+			Handler:       _RobotControl_WebRTCSignaling_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
 	},
-	Metadata: "proto/robot.proto",
+	Metadata: "internal/grpc/proto/robot.proto",
 }

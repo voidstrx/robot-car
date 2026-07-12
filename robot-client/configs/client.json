@@ -1,5 +1,8 @@
 {
-  "server_addr": "192.168.137.225:50051",
+  "server_addr": "192.168.137.213:50051",
+  "webrtc": {
+    "enabled": true
+  },
   "keyboard": {
     "steering_left": ["left", "a"],
     "steering_right": ["right", "d"],

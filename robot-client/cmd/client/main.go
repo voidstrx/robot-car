@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"robot-client/input"
+	"robot-client/internal/webrtc"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -19,15 +20,20 @@ import (
 
 type Config struct {
 	ServerAddr string `json:"server_addr"`
+	WebRTC     struct {
+		Enabled bool `json:"enabled"`
+	} `json:"webrtc"`
 }
 
 type Game struct {
-	keyboard  *input.Keyboard // пока оставим, позже вынесем
-	gamepad   *input.Gamepad
-	stream    pb.RobotControl_StreamControlClient
-	cmdCh     chan *pb.Command
-	lastCmd   *pb.Command
-	connected bool
+	keyboard      *input.Keyboard
+	gamepad       *input.Gamepad
+	stream        pb.RobotControl_StreamControlClient
+	cmdCh         chan *pb.Command
+	lastCmd       *pb.Command
+	connected     bool
+	webrtcClient  *webrtc.Client
+	lastTelemetry *pb.Telemetry
 }
 
 func loadConfig() Config {
@@ -40,6 +46,17 @@ func loadConfig() Config {
 	return cfg
 }
 
+func (g *Game) connectWithRetry(addr string) (*grpc.ClientConn, error) {
+	for attempt := 0; attempt < 30; attempt++ {
+		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err == nil {
+			return conn, nil
+		}
+		time.Sleep(time.Duration(500*(attempt+1)) * time.Millisecond)
+	}
+	return nil, fmt.Errorf("не удалось подключиться")
+}
+
 func NewGame() *Game {
 	cfg := loadConfig()
 	g := &Game{
@@ -49,20 +66,24 @@ func NewGame() *Game {
 		lastCmd:  &pb.Command{},
 	}
 
-	conn, err := grpc.Dial(cfg.ServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := g.connectWithRetry(cfg.ServerAddr)
 	if err != nil {
-		log.Printf("⚠️ Не удалось подключиться: %v", err)
-	} else {
-		client := pb.NewRobotControlClient(conn)
-		g.stream, err = client.StreamControl(context.Background())
-		if err != nil {
-			log.Printf("Stream error: %v", err)
-		} else {
-			g.connected = true
-			go g.sendLoop()
-			go g.recvLoop()
-			log.Println("✅ Подключено к", cfg.ServerAddr)
-		}
+		log.Fatal(err)
+	}
+	client := pb.NewRobotControlClient(conn)
+
+	controlStream, _ := client.StreamControl(context.Background())
+	g.stream = controlStream
+	g.connected = true
+
+	webrtcStream, _ := client.WebRTCSignaling(context.Background())
+	g.webrtcClient = webrtc.NewClient()
+
+	go g.sendLoop()
+	go g.recvLoop()
+
+	if cfg.WebRTC.Enabled {
+		g.webrtcClient.Start(webrtcStream)
 	}
 	return g
 }
@@ -85,18 +106,18 @@ func (g *Game) recvLoop() {
 		if err != nil {
 			return
 		}
-		fmt.Printf("\r[Tel] Dist:%.1f Steer:%.2f", tel.Distance, tel.Steering)
+		g.lastTelemetry = tel
 	}
 }
 
 func (g *Game) Update() error {
 	g.keyboard.Update()
 	g.gamepad.Update()
-
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
 		os.Exit(0)
 	}
 
+	// ... (логика управления без изменений) ...
 	steer := g.gamepad.Steering()
 	if steer == 0 {
 		steer = g.keyboard.Steering()
@@ -114,12 +135,7 @@ func (g *Game) Update() error {
 		tilt = g.keyboard.Tilt()
 	}
 
-	cmd := &pb.Command{
-		Steering: float32(steer),
-		Pan:      float32(pan),
-		Tilt:     float32(tilt),
-		Move:     float32(move),
-	}
+	cmd := &pb.Command{Steering: float32(steer), Pan: float32(pan), Tilt: float32(tilt), Move: float32(move)}
 	g.lastCmd = cmd
 
 	if g.connected {
@@ -132,13 +148,27 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	g.webrtcClient.Draw(screen)
+
 	status := "OFFLINE"
 	if g.connected {
 		status = "CONNECTED"
 	}
-	ebitenutil.DebugPrint(screen, fmt.Sprintf(
-		"Status: %s\n\nSteering: %.2f\nMove: %.2f\nPan: %.2f\nTilt: %.2f\n\nESC to quit",
-		status, g.lastCmd.Steering, g.lastCmd.Move, g.lastCmd.Pan, g.lastCmd.Tilt))
+	webrtcStatus, videoStatus := g.webrtcClient.GetStatuses()
+
+	y := 10
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("gRPC:   %s", status), 10, y)
+	y += 16
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("WebRTC: %s", webrtcStatus), 10, y)
+	y += 16
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Video:  %s", videoStatus), 10, y)
+	y += 16
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Steering: %.2f  Move: %.2f", g.lastCmd.Steering, g.lastCmd.Move), 10, y)
+	y += 16
+
+	if g.lastTelemetry != nil {
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Distance: %.1f", g.lastTelemetry.Distance), 10, y)
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -146,6 +176,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
+	log.SetOutput(os.Stdout)
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("Robot Client")
 	if err := ebiten.RunGame(NewGame()); err != nil {
