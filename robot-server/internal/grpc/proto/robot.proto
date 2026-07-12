@@ -6,6 +6,9 @@ option go_package = "robot-server/internal/grpc/pb;pb";
 
 service RobotControl {
   rpc StreamControl(stream Command) returns (stream Telemetry);
+
+  // Отдельный стрим для WebRTC signaling (SDP + ICE)
+  rpc WebRTCSignaling(stream WebRTCSignal) returns (stream WebRTCSignal);
 }
 
 message Command {
@@ -23,4 +26,14 @@ message Telemetry {
   float  motor_a   = 5;
   float  motor_b   = 6;
   int64  timestamp = 7;
+}
+
+// === WebRTC Signaling ===
+message WebRTCSignal {
+  oneof payload {
+    string offer         = 1;  // SDP Offer
+    string answer        = 2;  // SDP Answer
+    string ice_candidate = 3;  // ICE Candidate
+    bool   start_webrtc  = 4;  // Клиент просит начать WebRTC
+  }
 }

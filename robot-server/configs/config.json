@@ -63,5 +63,19 @@
   },
   "imu": {
     "mpu6050_addr": 104
+  },
+  "webrtc": {
+    "enabled": true,
+    "video": {
+      "enabled": true,
+      "width": 640,
+      "height": 480,
+      "fps": 30,
+      "bitrate_kbps": 1500,
+      "rtp_port": 5004
+    },
+    "audio": {
+      "enabled": false
+    }
   }
 }

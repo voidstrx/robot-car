@@ -181,6 +181,121 @@ func (x *Telemetry) GetTimestamp() int64 {
 	return 0
 }
 
+// === WebRTC Signaling ===
+type WebRTCSignal struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*WebRTCSignal_Offer
+	//	*WebRTCSignal_Answer
+	//	*WebRTCSignal_IceCandidate
+	//	*WebRTCSignal_StartWebrtc
+	Payload       isWebRTCSignal_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WebRTCSignal) Reset() {
+	*x = WebRTCSignal{}
+	mi := &file_internal_grpc_proto_robot_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WebRTCSignal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WebRTCSignal) ProtoMessage() {}
+
+func (x *WebRTCSignal) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_grpc_proto_robot_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WebRTCSignal.ProtoReflect.Descriptor instead.
+func (*WebRTCSignal) Descriptor() ([]byte, []int) {
+	return file_internal_grpc_proto_robot_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *WebRTCSignal) GetPayload() isWebRTCSignal_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *WebRTCSignal) GetOffer() string {
+	if x != nil {
+		if x, ok := x.Payload.(*WebRTCSignal_Offer); ok {
+			return x.Offer
+		}
+	}
+	return ""
+}
+
+func (x *WebRTCSignal) GetAnswer() string {
+	if x != nil {
+		if x, ok := x.Payload.(*WebRTCSignal_Answer); ok {
+			return x.Answer
+		}
+	}
+	return ""
+}
+
+func (x *WebRTCSignal) GetIceCandidate() string {
+	if x != nil {
+		if x, ok := x.Payload.(*WebRTCSignal_IceCandidate); ok {
+			return x.IceCandidate
+		}
+	}
+	return ""
+}
+
+func (x *WebRTCSignal) GetStartWebrtc() bool {
+	if x != nil {
+		if x, ok := x.Payload.(*WebRTCSignal_StartWebrtc); ok {
+			return x.StartWebrtc
+		}
+	}
+	return false
+}
+
+type isWebRTCSignal_Payload interface {
+	isWebRTCSignal_Payload()
+}
+
+type WebRTCSignal_Offer struct {
+	Offer string `protobuf:"bytes,1,opt,name=offer,proto3,oneof"` // SDP Offer
+}
+
+type WebRTCSignal_Answer struct {
+	Answer string `protobuf:"bytes,2,opt,name=answer,proto3,oneof"` // SDP Answer
+}
+
+type WebRTCSignal_IceCandidate struct {
+	IceCandidate string `protobuf:"bytes,3,opt,name=ice_candidate,json=iceCandidate,proto3,oneof"` // ICE Candidate
+}
+
+type WebRTCSignal_StartWebrtc struct {
+	StartWebrtc bool `protobuf:"varint,4,opt,name=start_webrtc,json=startWebrtc,proto3,oneof"` // Клиент просит начать WebRTC
+}
+
+func (*WebRTCSignal_Offer) isWebRTCSignal_Payload() {}
+
+func (*WebRTCSignal_Answer) isWebRTCSignal_Payload() {}
+
+func (*WebRTCSignal_IceCandidate) isWebRTCSignal_Payload() {}
+
+func (*WebRTCSignal_StartWebrtc) isWebRTCSignal_Payload() {}
+
 var File_internal_grpc_proto_robot_proto protoreflect.FileDescriptor
 
 const file_internal_grpc_proto_robot_proto_rawDesc = "" +
@@ -198,9 +313,16 @@ const file_internal_grpc_proto_robot_proto_rawDesc = "" +
 	"\x04tilt\x18\x04 \x01(\x02R\x04tilt\x12\x17\n" +
 	"\amotor_a\x18\x05 \x01(\x02R\x06motorA\x12\x17\n" +
 	"\amotor_b\x18\x06 \x01(\x02R\x06motorB\x12\x1c\n" +
-	"\ttimestamp\x18\a \x01(\x03R\ttimestamp2K\n" +
+	"\ttimestamp\x18\a \x01(\x03R\ttimestamp\"\x97\x01\n" +
+	"\fWebRTCSignal\x12\x16\n" +
+	"\x05offer\x18\x01 \x01(\tH\x00R\x05offer\x12\x18\n" +
+	"\x06answer\x18\x02 \x01(\tH\x00R\x06answer\x12%\n" +
+	"\rice_candidate\x18\x03 \x01(\tH\x00R\ficeCandidate\x12#\n" +
+	"\fstart_webrtc\x18\x04 \x01(\bH\x00R\vstartWebrtcB\t\n" +
+	"\apayload2\x92\x01\n" +
 	"\fRobotControl\x12;\n" +
-	"\rStreamControl\x12\x11.robot.v1.Command\x1a\x13.robot.v1.Telemetry(\x010\x01B\"Z robot-server/internal/grpc/pb;pbb\x06proto3"
+	"\rStreamControl\x12\x11.robot.v1.Command\x1a\x13.robot.v1.Telemetry(\x010\x01\x12E\n" +
+	"\x0fWebRTCSignaling\x12\x16.robot.v1.WebRTCSignal\x1a\x16.robot.v1.WebRTCSignal(\x010\x01B\"Z robot-server/internal/grpc/pb;pbb\x06proto3"
 
 var (
 	file_internal_grpc_proto_robot_proto_rawDescOnce sync.Once
@@ -214,16 +336,19 @@ func file_internal_grpc_proto_robot_proto_rawDescGZIP() []byte {
 	return file_internal_grpc_proto_robot_proto_rawDescData
 }
 
-var file_internal_grpc_proto_robot_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_internal_grpc_proto_robot_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_internal_grpc_proto_robot_proto_goTypes = []any{
-	(*Command)(nil),   // 0: robot.v1.Command
-	(*Telemetry)(nil), // 1: robot.v1.Telemetry
+	(*Command)(nil),      // 0: robot.v1.Command
+	(*Telemetry)(nil),    // 1: robot.v1.Telemetry
+	(*WebRTCSignal)(nil), // 2: robot.v1.WebRTCSignal
 }
 var file_internal_grpc_proto_robot_proto_depIdxs = []int32{
 	0, // 0: robot.v1.RobotControl.StreamControl:input_type -> robot.v1.Command
-	1, // 1: robot.v1.RobotControl.StreamControl:output_type -> robot.v1.Telemetry
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 1: robot.v1.RobotControl.WebRTCSignaling:input_type -> robot.v1.WebRTCSignal
+	1, // 2: robot.v1.RobotControl.StreamControl:output_type -> robot.v1.Telemetry
+	2, // 3: robot.v1.RobotControl.WebRTCSignaling:output_type -> robot.v1.WebRTCSignal
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -234,13 +359,19 @@ func file_internal_grpc_proto_robot_proto_init() {
 	if File_internal_grpc_proto_robot_proto != nil {
 		return
 	}
+	file_internal_grpc_proto_robot_proto_msgTypes[2].OneofWrappers = []any{
+		(*WebRTCSignal_Offer)(nil),
+		(*WebRTCSignal_Answer)(nil),
+		(*WebRTCSignal_IceCandidate)(nil),
+		(*WebRTCSignal_StartWebrtc)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_grpc_proto_robot_proto_rawDesc), len(file_internal_grpc_proto_robot_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

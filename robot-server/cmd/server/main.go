@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +13,7 @@ import (
 	"robot-server/internal/hardware"
 	"robot-server/internal/hardware/gpio"
 	"robot-server/internal/hardware/i2c"
+	"robot-server/internal/webrtc"
 )
 
 func main() {
@@ -38,8 +40,9 @@ func main() {
 
 	ultra := gpio.NewUltrasonic(int(cfg.Ultrasonic["trig_pin"]), int(cfg.Ultrasonic["echo_pin"]), state)
 	servoCtrl, _ := i2c.NewPCA9685ServoController(cfg.I2CBus, cfg.PCA9685Addr, cfg.Servos, state)
+
 	motorPins := make(map[string]map[string]int)
-	var maxDutyPercent float64 = 100 // дефолт
+	var maxDutyPercent float64 = 100
 
 	for name, pinsIface := range cfg.Motors {
 		if name == "max_duty_percent" {
@@ -48,7 +51,6 @@ func main() {
 			}
 			continue
 		}
-
 		if pinsMap, ok := pinsIface.(map[string]interface{}); ok {
 			motorPins[name] = map[string]int{
 				"in1": int(getFloat(pinsMap["in1"])),
@@ -58,7 +60,22 @@ func main() {
 		}
 	}
 
-	// Передаём maxDutyPercent в конструктор
+	// === WebRTC Config ===
+	var webrtcCfg webrtc.Config
+
+	if data, err := os.ReadFile("configs/config.json"); err == nil {
+		var wrapper struct {
+			WebRTC webrtc.Config `json:"webrtc"`
+		}
+		if err := json.Unmarshal(data, &wrapper); err == nil {
+			webrtcCfg = wrapper.WebRTC
+		} else {
+			log.Println("Ошибка парсинга webrtc конфига:", err)
+		}
+	}
+
+	webrtcManager := webrtc.NewManager(webrtcCfg)
+
 	motorCtrl := gpio.NewMotorController(motorPins, maxDutyPercent, state)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -76,10 +93,13 @@ func main() {
 		}
 		motorCtrl.StopAll()
 		gpio.CloseGPIO()
+		webrtcManager.Stop() // <-- добавили
 		os.Exit(0)
 	}()
 
-	srv := grpcserver.NewServer(servoCtrl, motorCtrl, ultra)
+	// === Передаём webrtcManager в gRPC сервер ===
+	srv := grpcserver.NewServer(servoCtrl, motorCtrl, ultra, webrtcManager)
+
 	fmt.Println("✅ Сервер готов. Ожидание подключений на :50051")
 	if err := grpcserver.StartGRPCServer(":50051", srv); err != nil {
 		panic(err)
