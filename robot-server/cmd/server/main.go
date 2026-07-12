@@ -39,7 +39,16 @@ func main() {
 	ultra := gpio.NewUltrasonic(int(cfg.Ultrasonic["trig_pin"]), int(cfg.Ultrasonic["echo_pin"]), state)
 	servoCtrl, _ := i2c.NewPCA9685ServoController(cfg.I2CBus, cfg.PCA9685Addr, cfg.Servos, state)
 	motorPins := make(map[string]map[string]int)
+	var maxDutyPercent float64 = 100 // дефолт
+
 	for name, pinsIface := range cfg.Motors {
+		if name == "max_duty_percent" {
+			if v, ok := pinsIface.(float64); ok {
+				maxDutyPercent = v
+			}
+			continue
+		}
+
 		if pinsMap, ok := pinsIface.(map[string]interface{}); ok {
 			motorPins[name] = map[string]int{
 				"in1": int(getFloat(pinsMap["in1"])),
@@ -48,7 +57,9 @@ func main() {
 			}
 		}
 	}
-	motorCtrl := gpio.NewMotorController(motorPins, state)
+
+	// Передаём maxDutyPercent в конструктор
+	motorCtrl := gpio.NewMotorController(motorPins, maxDutyPercent, state)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

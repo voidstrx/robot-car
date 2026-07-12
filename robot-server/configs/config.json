@@ -8,21 +8,21 @@
   },
   "servos": {
     "steering": {
-      "channel": 2,
+      "channel": 15,
       "min_pulse": 600,
-      "center_pulse": 1130,
+      "center_pulse": 1140,
       "max_pulse": 1640,
       "invert": true
     },
     "pan": {
-      "channel": 1,
+      "channel": 14,
       "min_pulse": 400,
       "center_pulse": 1140,
       "max_pulse": 1850,
       "invert": false
     },
     "tilt": {
-      "channel": 0,
+      "channel": 13,
       "min_pulse": 400,
       "center_pulse": 1140,
       "max_pulse": 1850,
@@ -40,7 +40,7 @@
       "in2": 27,
       "en": 17
     },
-    "max_duty_percent": 100
+    "max_duty_percent": 75
   },
   "leds": {
     "ws2811": {

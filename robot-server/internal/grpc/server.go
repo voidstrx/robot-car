@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 	"time"
 
@@ -24,6 +25,29 @@ type Server struct {
 
 func NewServer(servo hardware.ServoController, motor hardware.MotorController, ultra hardware.Ultrasonic) *Server {
 	return &Server{servo: servo, motor: motor, ultra: ultra}
+}
+
+var (
+	smoothed = 0.0  // Текущее сглаженное значение
+	lastSent = 0.0  // Последнее отправленное значение
+	isFirst  = true // Флаг первого запуска
+)
+
+func filter(raw float64) (float64, bool) {
+	if isFirst {
+		smoothed, lastSent, isFirst = raw, raw, false
+		return raw, true
+	}
+
+	// 1. Сглаживание (EMA)
+	smoothed = 0.25*raw + 0.75*smoothed
+
+	// 2. Мертвая зона (Deadzone). Порог 0.04 (около 2% от диапазона)
+	if math.Abs(smoothed-lastSent) >= 0.04 {
+		lastSent = smoothed
+		return lastSent, true // Значение изменилось, нужно отправить на серву
+	}
+	return lastSent, false // Изменение слишком мало, игнорируем
 }
 
 func (s *Server) StreamControl(stream pb.RobotControl_StreamControlServer) error {
@@ -64,20 +88,28 @@ func (s *Server) StreamControl(stream pb.RobotControl_StreamControlServer) error
 		log.Printf("📥 Получена команда: steer=%.2f move=%.2f pan=%.2f tilt=%.2f",
 			cmd.Steering, cmd.Move, cmd.Pan, cmd.Tilt)
 
-		// Применяем к железу
+		// Применяем сервоприводы
 		if s.servo != nil {
 			s.servo.SetPosition(context.Background(), "steering", float64(cmd.Steering))
 			s.servo.SetPosition(context.Background(), "pan", float64(cmd.Pan))
 			s.servo.SetPosition(context.Background(), "tilt", float64(cmd.Tilt))
 		}
 
-		base := float64(cmd.Move)
-		left := base
-		right := base
-		if cmd.Steering > 0 {
-			right -= float64(cmd.Steering) * 0.55
-		} else if cmd.Steering < 0 {
-			left += float64(cmd.Steering) * 0.55
+		// === ЛОГИКА ДВИЖЕНИЯ: поворот только при Move ≠ 0 ===
+		move := float64(cmd.Move)
+		steer := float64(cmd.Steering)
+
+		left := move
+		right := move
+
+		if move != 0 && steer != 0 {
+			turnFactor := 0.65
+
+			if steer > 0 { // поворот вправо
+				right -= math.Abs(steer) * turnFactor
+			} else if steer < 0 { // поворот влево
+				left -= math.Abs(steer) * turnFactor
+			}
 		}
 
 		s.motor.SetSpeed(context.Background(), "a", left)
