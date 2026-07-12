@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package robot.v1;
+
+option go_package = "robot-client/pb;pb";
+
+service RobotControl {
+  rpc StreamControl(stream Command) returns (stream Telemetry);
+}
+
+message Command {
+  float steering = 1;
+  float pan      = 2;
+  float tilt     = 3;
+  float move     = 4;
+}
+
+message Telemetry {
+  float  distance  = 1;
+  float  steering  = 2;
+  float  pan       = 3;
+  float  tilt      = 4;
+  float  motor_a   = 5;
+  float  motor_b   = 6;
+  int64  timestamp = 7;
+}
