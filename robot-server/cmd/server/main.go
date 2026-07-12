@@ -38,7 +38,17 @@ func main() {
 
 	ultra := gpio.NewUltrasonic(int(cfg.Ultrasonic["trig_pin"]), int(cfg.Ultrasonic["echo_pin"]), state)
 	servoCtrl, _ := i2c.NewPCA9685ServoController(cfg.I2CBus, cfg.PCA9685Addr, cfg.Servos, state)
-	motorCtrl := gpio.NewMotorController(nil, state) // упрощённо
+	motorPins := make(map[string]map[string]int)
+	for name, pinsIface := range cfg.Motors {
+		if pinsMap, ok := pinsIface.(map[string]interface{}); ok {
+			motorPins[name] = map[string]int{
+				"in1": int(getFloat(pinsMap["in1"])),
+				"in2": int(getFloat(pinsMap["in2"])),
+				"en":  int(getFloat(pinsMap["en"])),
+			}
+		}
+	}
+	motorCtrl := gpio.NewMotorController(motorPins, state)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
