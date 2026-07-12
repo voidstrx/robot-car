@@ -1,0 +1,67 @@
+{
+  "i2c_bus": 1,
+  "pca9685_addr": 64,
+  "ultrasonic": {
+    "trig_pin": 11,
+    "echo_pin": 8,
+    "interval_ms": 100
+  },
+  "servos": {
+    "steering": {
+      "channel": 2,
+      "min_pulse": 600,
+      "center_pulse": 1130,
+      "max_pulse": 1640,
+      "invert": true
+    },
+    "pan": {
+      "channel": 1,
+      "min_pulse": 400,
+      "center_pulse": 1140,
+      "max_pulse": 1850,
+      "invert": false
+    },
+    "tilt": {
+      "channel": 0,
+      "min_pulse": 400,
+      "center_pulse": 1140,
+      "max_pulse": 1850,
+      "invert": true
+    }
+  },
+  "motors": {
+    "a": {
+      "in1": 14,
+      "in2": 15,
+      "en": 4
+    },
+    "b": {
+      "in1": 18,
+      "in2": 27,
+      "en": 17
+    },
+    "max_duty_percent": 100
+  },
+  "leds": {
+    "ws2811": {
+      "enabled": true,
+      "gpio_pin": 12,
+      "led_count": 12,
+      "brightness": 80
+    },
+    "simple": [
+      {"id": "left_r", "pin": 22, "active_low": true},
+      {"id": "left_g", "pin": 23, "active_low": true},
+      {"id": "left_b", "pin": 24, "active_low": true},
+      {"id": "right_r", "pin": 10, "active_low": true},
+      {"id": "right_g", "pin": 9, "active_low": true},
+      {"id": "right_b", "pin": 25, "active_low": true},
+      {"id": "plata_red", "pin": 5, "active_low": true},
+      {"id": "plata_green", "pin": 6, "active_low": true},
+      {"id": "plata_blue", "pin": 13, "active_low": true}
+    ]
+  },
+  "imu": {
+    "mpu6050_addr": 104
+  }
+}
