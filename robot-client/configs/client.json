@@ -1,0 +1,14 @@
+{
+  "wsl_vm_name": "robot",
+
+  "hvsocket": {
+    "video_service_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "command_service_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+  },
+
+  "window": {
+    "width": 1280,
+    "height": 720,
+    "title": "Robot Client - Hybrid Mode"
+  }
+}
