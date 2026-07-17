@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package robot.v1;
+
+option go_package = "robot-server/internal/grpc/pb;pb";
+
+import "google/protobuf/empty.proto";
+
+// ====================== Режим работы ======================
+enum Mode {
+  MODE_UNSPECIFIED = 0;
+  MODE_MANUAL      = 1;  // Управление только с Windows
+  MODE_AUTO        = 2;  // Управление с WSL (Orchestrator)
+}
+
+message SetModeRequest {
+  Mode mode = 1;
+}
+
+message GetModeRequest {}
+
+message GetModeResponse {
+  Mode mode = 1;
+}
+
+// ====================== Команда управления (unary) ======================
+message ControlCommand {
+  float steering = 1;  // -1.0 .. +1.0
+  float move     = 2;  // -1.0 .. +1.0
+  float pan      = 3;  // -1.0 .. +1.0
+  float tilt     = 4;  // -1.0 .. +1.0
+}
+
+// ====================== Текстовое сообщение (задача для Orchestrator) ======================
+message SetMessageRequest {
+  string text = 1;
+}
+
+message HasPendingMessageRequest {}
+
+message HasPendingMessageResponse {
+  bool has_message = 1;
+}
+
+message TakeMessageRequest {}
+
+message TakeMessageResponse {
+  string text = 1;
+}
+
+// ====================== Телеметрия (пока оставляем для совместимости) ======================
+message Telemetry {
+  float   distance  = 1;
+  float   steering  = 2;
+  float   pan       = 3;
+  float   tilt      = 4;
+  float   motor_a   = 5;
+  float   motor_b   = 6;
+  int64   timestamp = 7;
+
+  float   accel_x = 8;
+  float   accel_y = 9;
+  float   accel_z = 10;
+  float   gyro_x  = 11;
+  float   gyro_y  = 12;
+  float   gyro_z  = 13;
+
+  float motor_a_target = 14;
+  float motor_b_target = 15;
+  float motor_a_duty   = 16;
+  float motor_b_duty   = 17;
+}
+
+// ====================== Сервис ======================
+service RobotControl {
+  // Управление (unary)
+  rpc SendCommand(ControlCommand) returns (google.protobuf.Empty);
+
+  // Режим
+  rpc SetMode(SetModeRequest) returns (google.protobuf.Empty);
+  rpc GetMode(GetModeRequest) returns (GetModeResponse);
+
+  // Текстовое сообщение (одно, перезаписывается)
+  rpc SetMessage(SetMessageRequest) returns (google.protobuf.Empty);
+  rpc HasPendingMessage(HasPendingMessageRequest) returns (HasPendingMessageResponse);
+  rpc TakeMessage(TakeMessageRequest) returns (TakeMessageResponse);
+
+  // Постоянный поток телеметрии (Pi → WSL)
+  // WSL открывает один раз и постоянно получает данные
+  rpc StreamTelemetry(google.protobuf.Empty) returns (stream Telemetry);
+}

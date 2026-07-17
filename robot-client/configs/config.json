@@ -1,0 +1,12 @@
+{
+  "raspberry_pi_addr": "192.168.88.135:50051",
+  "wsl_vm_guid": "BD3B0C37-9195-417C-8E4D-DB6FC4B9D17F",
+  "hvsocket": {
+    "video_service_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  },
+  "window": {
+    "width": 1280,
+    "height": 720,
+    "title": "Robot Client"
+  }
+}

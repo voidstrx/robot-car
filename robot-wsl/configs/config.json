@@ -1,0 +1,13 @@
+{
+  "server_addr": "192.168.88.135:50051",
+  "rtsp_url": "rtsp://192.168.88.135:8554/robot",
+  "poll_mode_interval_ms": 100,
+  "window": {
+    "width": 1280,
+    "height": 720
+  },
+  "brain": {
+    "enabled": true,
+    "mode": "MANUAL"
+  }
+}

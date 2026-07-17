@@ -1,0 +1,46 @@
+{
+  "i2c_bus": 1,
+  "pca9685_addr": 64,
+  "ultrasonic": {
+    "trig_pin": 11,
+    "echo_pin": 8,
+    "interval_ms": 100
+  },
+  "servos": {
+    "steering": {
+      "channel": 1,
+      "min_pulse": 600,
+      "center_pulse": 1140,
+      "max_pulse": 1640,
+      "invert": true
+    },
+    "pan": {
+      "channel": 0,
+      "min_pulse": 400,
+      "center_pulse": 1140,
+      "max_pulse": 1850,
+      "invert": false
+    },
+    "tilt": {
+      "channel": 15,
+      "min_pulse": 400,
+      "center_pulse": 1140,
+      "max_pulse": 1850,
+      "invert": true
+    }
+  },
+  "motors": {
+    "a": {
+      "in1": 14,
+      "in2": 15,
+      "en": 4
+    },
+    "b": {
+      "in1": 18,
+      "in2": 27,
+      "en": 17
+    },
+    "max_duty_percent": 75
+  },
+  "grpc_listen": ":50051"
+}
